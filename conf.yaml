@@ -2,3 +2,9 @@ MongoDbReplicaList:
   - 172.22.44.141
 KafkaBrokerList: 
   - 172.22.44.141:9092
+PostgresDetails:
+  Host: 172.22.44.141
+  Port: 5432
+  User: postgres
+  Password: secret
+  DbName: postgres

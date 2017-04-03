@@ -20,6 +20,15 @@ src/iot-demo/ $ iot-demo
 
 ## Querying Data
 
+### Register a new device
+
+```
+curl -i -X POST \
+    -H "Content-Type: application/json" \
+    -d '{"UniqueDeviceId": "ABCDEFG", "DeviceType": "10"}' \
+    172.18.44.141:3000/api/device/RegisterDevice
+```
+
 ### Get All Devices
 
 ```

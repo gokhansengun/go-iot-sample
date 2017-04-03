@@ -1,4 +1,4 @@
-package device 
+package iot 
 
 import (
 	"github.com/Shopify/sarama"

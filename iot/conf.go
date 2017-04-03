@@ -1,16 +1,26 @@
-package device 
+package iot
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
-
 	"gopkg.in/yaml.v2"
 )
 
+// PostgresDetails keeps the database user, name, password
+type PostgresDetails struct {
+	Host   string `yaml:"Host"`
+	Port	int `yaml:"Port"`
+	User   string `yaml:"User"`
+	Password string `yaml:"Password"`
+	DbName string `yaml:"DbName"`
+}
+
 // AppConf is the type to decompose the configuration
 type AppConf struct {
-	MongoDbReplicaList []string `yaml:"MongoDbReplicaList"`
-	KafkaBrokerList    []string `yaml:"KafkaBrokerList"`
+	MongoDbReplicaList []string        `yaml:"MongoDbReplicaList"`
+	KafkaBrokerList    []string        `yaml:"KafkaBrokerList"`
+	PgDetails          PostgresDetails `yaml:"PostgresDetails"`
 	configRead         bool
 }
 
@@ -41,4 +51,15 @@ func (appConf AppConf) GetMongoDbConnStr() string {
 // GetKafkaConnStr returns the KafkaBrokerList in the format expected
 func (appConf AppConf) GetKafkaConnStr() []string {
 	return appConf.KafkaBrokerList
+}
+
+// GetPostgresConnStr returns the PostgresConn str in the format expected
+func (appConf AppConf) GetPostgresConnStr() string {
+	pgDetails := appConf.PgDetails
+
+	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", pgDetails.Host, pgDetails.Port, pgDetails.User, pgDetails.Password, pgDetails.DbName)
+
+	// fmt.Printf("The Postgres conn str is %s\n", connStr)
+
+	return connStr
 }

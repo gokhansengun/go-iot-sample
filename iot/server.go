@@ -1,4 +1,4 @@
-package device
+package iot
 
 import (
 	"encoding/json"
@@ -34,13 +34,14 @@ func initMartiniServer() *MartiniServer {
 }
 
 // NewServer create the server and set up middleware.
-func NewServer(session *DatabaseSession, kafkaSession *KafkaSession) *MartiniServer {
+func NewServer(session *DatabaseSession, kafkaSession *KafkaSession, postgresSession *PostgresSession) *MartiniServer {
 	m := initMartiniServer()
 	m.Martini.Use(render.Renderer(render.Options{
 		IndentJSON: true,
 	}))
 	m.Martini.Use(session.NewMongoDbDatabase())
 	m.Martini.Use(kafkaSession.NewKafkaSyncQueue())
+	m.Martini.Use(postgresSession.NewPostgresSession())
 
 	log.SetOutput(ioutil.Discard)
 
@@ -96,10 +97,19 @@ func NewServer(session *DatabaseSession, kafkaSession *KafkaSession) *MartiniSer
 		func(device Device,
 			r render.Render,
 			db *mgo.Database,
+			postgres *PostgresSession,
 			kafka *KafkaSession) {
+
+			err := postgres.RegisterDevice(device)
 
 			// TODO: gseng - fill this function in
 			apiResponse := utility.APIResponse{StatusCode: 200, Code: "0000", Message: "OK"}
+
+			if err != nil {
+				apiResponse.Result = err.Error()
+				apiResponse.Message = "ERROR"
+			}
+
 			r.JSON(200, apiResponse)
 		})
 

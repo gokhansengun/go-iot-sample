@@ -1,8 +1,10 @@
-package device
+package iot
 
 import (
 	"time"
 
+	// Using blank import for Postgres Driver
+	_ "github.com/lib/pq"
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
 )

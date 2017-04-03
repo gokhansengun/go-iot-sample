@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/gokhansengun/go-iot-sample/device"
+	"github.com/gokhansengun/go-iot-sample/iot"
 )
 
 /*
@@ -11,11 +11,13 @@ that session, then begin listening for HTTP requests.
 */
 func main() {
 
-	appConf := device.NewConfig("conf.yaml")
+	appConf := iot.NewConfig("conf.yaml")
 
 	// TODO: gseng - check whether below is the database name, if so change it
-	mongoDbSession := device.NewMongoDbSession("SampleApp", appConf.GetMongoDbConnStr())
-	kafkaSession := device.NewKafkaSession(appConf.GetKafkaConnStr())
-	server := device.NewServer(mongoDbSession, kafkaSession)
+	mongoDbSession := iot.NewMongoDbSession("SampleApp", appConf.GetMongoDbConnStr())
+	kafkaSession := iot.NewKafkaSession(appConf.GetKafkaConnStr())
+	postgresSession := iot.NewPostgresSession(appConf.GetPostgresConnStr())
+
+	server := iot.NewServer(mongoDbSession, kafkaSession, postgresSession)
 	server.Martini.Run()
 }
