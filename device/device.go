@@ -1,7 +1,10 @@
 package device
 
 import (
+	"time"
+
 	"labix.org/v2/mgo"
+	"labix.org/v2/mgo/bson"
 )
 
 // Device is composed of some variables
@@ -25,4 +28,25 @@ func fetchAllDevices(db *mgo.Database) []Device {
 	}
 
 	return devices
+}
+
+func fetchAllHeartBeatDetails(db *mgo.Database, deviceID string, lastNMilliSeconds int) []HeartBeat {
+	heartBeats := []HeartBeat{}
+
+	now := time.Now()
+	duration := time.Duration(-lastNMilliSeconds) * time.Millisecond
+	cutoffDate := now.Add(duration)
+
+	query := bson.M{"$and": []bson.M{bson.M{"UniqueDeviceId": deviceID}, bson.M{"HeartBeatOn": bson.M{"$gt": cutoffDate}}}}
+
+	if deviceID == "" {
+		query = bson.M{"HeartBeatOn": bson.M{"$gt": cutoffDate}}
+	}
+
+	err := db.C("DeviceDetail").Find(query).All(&heartBeats)
+	if err != nil {
+		panic(err)
+	}
+
+	return heartBeats
 }

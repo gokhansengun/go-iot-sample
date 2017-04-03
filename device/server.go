@@ -4,6 +4,11 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"log"
+	"net/http"
+
+	"strconv"
+
+	"time"
 
 	"github.com/go-martini/martini"
 	"github.com/gokhansengun/go-iot-sample/utility"
@@ -47,6 +52,26 @@ func NewServer(session *DatabaseSession, kafkaSession *KafkaSession) *MartiniSer
 
 	})
 
+	// /api/device/DeviceHeartBeatDetails/?UniqueDeviceId=${UNIQUE_DEVICE_ID}&lastNMilliSeconds=6000
+	m.Get("/api/device/DeviceHeartBeatDetails/",
+		func(r render.Render,
+			req *http.Request,
+			db *mgo.Database,
+			kafka *KafkaSession) {
+
+			deviceID := req.URL.Query().Get("UniqueDeviceId")
+			lastNMilliSeconds, err := strconv.Atoi(req.URL.Query().Get("lastNMilliSeconds"))
+
+			if err != nil {
+				r.JSON(400, "Expecting lastNMilliSeconds parameter in the query string")
+				return
+			}
+
+			heartBeatDetails := fetchAllHeartBeatDetails(db, deviceID, lastNMilliSeconds)
+
+			r.JSON(200, heartBeatDetails)
+		})
+
 	// Define the "GET /api/device/list" route.
 	m.Get("/api/device/list", func(r render.Render, db *mgo.Database, kafka *KafkaSession) {
 		r.JSON(200, fetchAllDevices(db))
@@ -89,6 +114,7 @@ func NewServer(session *DatabaseSession, kafkaSession *KafkaSession) *MartiniSer
 
 			if heartBeat.valid() {
 				// device is valid, insert into Kafka
+				heartBeat.HeartBeatOn = time.Now().UTC()
 				buff, err := json.Marshal(heartBeat)
 
 				if err != nil {
