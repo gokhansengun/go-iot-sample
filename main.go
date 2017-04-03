@@ -17,7 +17,8 @@ func main() {
 	mongoDbSession := iot.NewMongoDbSession("SampleApp", appConf.GetMongoDbConnStr())
 	kafkaSession := iot.NewKafkaSession(appConf.GetKafkaConnStr())
 	postgresSession := iot.NewPostgresSession(appConf.GetPostgresConnStr())
+	redisSession := iot.NewRedisSession(appConf.GetRedisAddr())
 
-	server := iot.NewServer(mongoDbSession, kafkaSession, postgresSession)
+	server := iot.NewServer(mongoDbSession, kafkaSession, postgresSession, redisSession)
 	server.Martini.Run()
 }

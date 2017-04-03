@@ -40,42 +40,52 @@ func (postgresSession *PostgresSession) RegisterDevice(device Device) error {
 	// first check whether the device is already in the Database
 	// if so do not do anything, if not add it to the db
 
-	err := deviceAlreadyRegistered(postgresSession.DB, device)
+	alreadyRegistered, err := deviceAlreadyRegistered(postgresSession.DB, device.UniqueDeviceID)
 
 	if err != nil {
 		return err
 	}
 
-	return insertDevice(postgresSession.DB, device)
-}
-
-func deviceAlreadyRegistered(postgres *sql.DB, device Device) error {
-	// TODO: gseng - SQL Injection here :-)
-	queryDeviceStr := `SELECT * FROM "Device" WHERE "UniqueDeviceId" = $1`
-	deviceResult := Device{}
-
-	rows, err := postgres.Query(queryDeviceStr, device.UniqueDeviceID)
-
-	if err != nil {
-		return err
+	if !alreadyRegistered {
+		return insertDevice(postgresSession.DB, device)
 	}
-
-	values, err := rows.Columns()
-
-	if err != nil {
-		return err
-	}
-
-	if len(values) == 1 {
-		fmt.Printf("Device with id %s already registered\n", device.UniqueDeviceID)
-		return nil
-	} else if len(values) > 0 {
-		return fmt.Errorf("More than one device found with the same id %s", device.UniqueDeviceID)
-	}
-
-	fmt.Printf("Returned device id is %v\n", deviceResult.UniqueDeviceID)
 
 	return nil
+}
+
+// DoesDeviceExist checks whether device is already in the db or not
+func (postgresSession *PostgresSession) DoesDeviceExist(uniqueDeviceID string) bool {
+	alreadyExists, _ := deviceAlreadyRegistered(postgresSession.DB, uniqueDeviceID)
+
+	return alreadyExists
+}
+
+func deviceAlreadyRegistered(postgres *sql.DB, uniqueDeviceID string) (bool, error) {
+	// TODO: gseng - SQL Injection here :-)
+	queryDeviceStr := `SELECT COUNT("Id") FROM "Device" WHERE "UniqueDeviceId" = $1`
+
+	rows, err := postgres.Query(queryDeviceStr, uniqueDeviceID)
+
+	if err != nil {
+		return false, err
+	}
+
+	count := 0
+	for rows.Next() {
+		err = rows.Scan(&count)
+		if err != nil {
+			return false, err
+		}
+	}
+
+	if count == 1 {
+		// fmt.Printf("Device with id %s already registered\n", uniqueDeviceID)
+		return true, nil
+	} else if count > 0 {
+		return true, fmt.Errorf("More than one device found with the same id %s", uniqueDeviceID)
+	}
+
+	return false, nil
 }
 
 func insertDevice(postgres *sql.DB, device Device) error {
@@ -95,13 +105,11 @@ func insertDevice(postgres *sql.DB, device Device) error {
 		return err
 	}
 
-	fmt.Printf("New record ID is: %d", id)
-
 	return nil
 }
 
-// NewPostgresSession adds Postgres to the Martini pipeline
-func (postgresSession *PostgresSession) NewPostgresSession() martini.Handler {
+// NewPostgresHandler adds Postgres to the Martini pipeline
+func (postgresSession *PostgresSession) NewPostgresHandler() martini.Handler {
 	return func(context martini.Context) {
 		context.Map(postgresSession)
 		context.Next()

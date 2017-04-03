@@ -1,4 +1,4 @@
-package iot 
+package iot
 
 import (
 	"github.com/Shopify/sarama"
@@ -47,8 +47,8 @@ func (kafka *KafkaSession) ProduceMessage(content string, topic string) error {
 	return nil
 }
 
-// NewKafkaSyncQueue adds Kafka to the Martini pipeline
-func (kafka *KafkaSession) NewKafkaSyncQueue() martini.Handler {
+// NewKafkaHandler adds Kafka to the Martini pipeline
+func (kafka *KafkaSession) NewKafkaHandler() martini.Handler {
 	return func(context martini.Context) {
 		context.Map(kafka)
 		context.Next()

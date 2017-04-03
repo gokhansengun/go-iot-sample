@@ -1,10 +1,20 @@
-MongoDbReplicaList: 
-  - 172.22.44.141
-KafkaBrokerList: 
-  - 172.22.44.141:9092
-PostgresDetails:
-  Host: 172.22.44.141
-  Port: 5432
-  User: postgres
-  Password: secret
+--- 
+Kafka: 
+  Brokers: 
+    - 
+      Host: "172.22.44.141"
+      Port: 9092
+MongoDb: 
+  Replicas: 
+    - 
+      Host: "172.22.44.141"
+      Port: 27017
+Postgres: 
   DbName: postgres
+  Host: "172.22.44.141"
+  Password: secret
+  Port: 5432
+  Username: postgres
+Redis: 
+  Host: "172.22.44.141"
+  Port: 6379

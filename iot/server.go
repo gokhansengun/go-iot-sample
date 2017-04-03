@@ -10,6 +10,8 @@ import (
 
 	"time"
 
+	"fmt"
+
 	"github.com/go-martini/martini"
 	"github.com/gokhansengun/go-iot-sample/utility"
 	"github.com/martini-contrib/binding"
@@ -34,14 +36,15 @@ func initMartiniServer() *MartiniServer {
 }
 
 // NewServer create the server and set up middleware.
-func NewServer(session *DatabaseSession, kafkaSession *KafkaSession, postgresSession *PostgresSession) *MartiniServer {
+func NewServer(session *DatabaseSession, kafkaSession *KafkaSession, postgresSession *PostgresSession, redisSession *RedisSession) *MartiniServer {
 	m := initMartiniServer()
 	m.Martini.Use(render.Renderer(render.Options{
 		IndentJSON: true,
 	}))
-	m.Martini.Use(session.NewMongoDbDatabase())
-	m.Martini.Use(kafkaSession.NewKafkaSyncQueue())
-	m.Martini.Use(postgresSession.NewPostgresSession())
+	m.Martini.Use(session.NewMongoDbHandler())
+	m.Martini.Use(kafkaSession.NewKafkaHandler())
+	m.Martini.Use(postgresSession.NewPostgresHandler())
+	m.Martini.Use(redisSession.NewRedisHandler())
 
 	log.SetOutput(ioutil.Discard)
 
@@ -118,12 +121,33 @@ func NewServer(session *DatabaseSession, kafkaSession *KafkaSession, postgresSes
 		func(heartBeat HeartBeat,
 			r render.Render,
 			db *mgo.Database,
+			postgres *PostgresSession,
+			redis *RedisSession,
 			kafka *KafkaSession) {
 
 			apiResponse := utility.APIResponse{StatusCode: 200, Code: "0000", Message: "OK"}
 
 			if heartBeat.valid() {
-				// device is valid, insert into Kafka
+				// device data is valid, now check whether we know this device or not
+
+				// first check the cache
+				if !redis.KeyExists(heartBeat.UniqueDeviceID) {
+					// if it is not in the cache, query from the db now
+					if !postgres.DoesDeviceExist(heartBeat.UniqueDeviceID) {
+						// this device is not in the db, send an error
+						apiResponse.Code = "0001"
+						apiResponse.StatusCode = 400
+						apiResponse.Message = fmt.Sprintf("No device exists with id: %s", heartBeat.UniqueDeviceID)
+						r.JSON(apiResponse.StatusCode, apiResponse)
+						return
+					} else {
+						// add device to the cache
+						redis.SetKey(heartBeat.UniqueDeviceID, "exist")
+					}
+				}
+
+				// insert into Kafka
+
 				heartBeat.HeartBeatOn = time.Now().UTC()
 				buff, err := json.Marshal(heartBeat)
 
@@ -132,6 +156,7 @@ func NewServer(session *DatabaseSession, kafkaSession *KafkaSession, postgresSes
 					apiResponse.StatusCode = 400
 					apiResponse.Message = err.Error()
 					r.JSON(apiResponse.StatusCode, apiResponse)
+					return
 				}
 
 				// TODO: gseng - get topic name from Config
@@ -141,6 +166,7 @@ func NewServer(session *DatabaseSession, kafkaSession *KafkaSession, postgresSes
 					// but for compatibility we retur 200
 					// r.JSON(200, apiResponse)
 					r.JSON(200, apiResponse)
+					return
 				} else {
 					// insert failed, 400 Bad Request
 					apiResponse.Code = "0001"
@@ -148,6 +174,7 @@ func NewServer(session *DatabaseSession, kafkaSession *KafkaSession, postgresSes
 					apiResponse.Message = err.Error()
 
 					r.JSON(apiResponse.StatusCode, apiResponse)
+					return
 				}
 			} else {
 				// heartBeat is invalid, 400 Bad Request
@@ -156,6 +183,7 @@ func NewServer(session *DatabaseSession, kafkaSession *KafkaSession, postgresSes
 				apiResponse.Message = "Not a valid device heartbeat"
 
 				r.JSON(apiResponse.StatusCode, apiResponse)
+				return
 			}
 		})
 
