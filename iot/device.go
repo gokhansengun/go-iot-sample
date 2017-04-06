@@ -78,7 +78,7 @@ func fetchAllHeartBeatDetailsNormalized(db *mgo.Database, lastRecordID string, l
 		maxID := group[0].ID
 
 		for _, heartBeat := range group {
-			if heartBeat.ID > maxID {
+			if *(heartBeat.ID) > *maxID {
 				maxID = heartBeat.ID
 			}
 		}

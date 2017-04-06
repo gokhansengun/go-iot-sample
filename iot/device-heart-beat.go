@@ -10,13 +10,13 @@ import (
 // email, age, and short message. When represented in
 // JSON, ditch TitleCase for snake_case.
 type HeartBeat struct {
-	ID bson.ObjectId `json:"-" bson:"_id,omitempty"`
+	ID *bson.ObjectId `json:"id,omitempty" bson:"_id,omitempty"`
 
-	UniqueDeviceID string `bson:"UniqueDeviceId"`
+	UniqueDeviceID string `json:"uniqueDeviceId" bson:"UniqueDeviceId"`
 
-	AccelerometerX float64 `bson:"AccelerometerX"`
-	AccelerometerY float64 `bson:"AccelerometerY"`
-	AccelerometerZ float64 `bson:"AccelerometerZ"`
+	AccelerometerX float64 `json:"accelerometerX" bson:"AccelerometerX"`
+	AccelerometerY float64 `json:"accelerometerY" bson:"AccelerometerY"`
+	AccelerometerZ float64 `json:"accelerometerZ" bson:"AccelerometerZ"`
 
 	GyroscopeX float64 `bson:"GyroscopeX"`
 	GyroscopeY float64 `bson:"GyroscopeY"`

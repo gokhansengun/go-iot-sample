@@ -57,7 +57,7 @@ func NewServer(session *DatabaseSession, kafkaSession *KafkaSession, postgresSes
 	})
 
 	// /api/Device/DeviceHeartBeatDetailsNormalized/?id=58e665cd31eb78000738fedd&lastNMilliSeconds=30000&normalizeOnMilliSeconds=250&UniqueDeviceId=HT37WW902113
-	m.Get("/api/device/DeviceHeartBeatDetailsNormalized/",
+	m.Get("/api/Device/DeviceHeartBeatDetailsNormalized/",
 		func(r render.Render,
 			req *http.Request,
 			db *mgo.Database) {
@@ -77,7 +77,7 @@ func NewServer(session *DatabaseSession, kafkaSession *KafkaSession, postgresSes
 		})
 
 	// /api/device/DeviceHeartBeatDetails/?UniqueDeviceId=${UNIQUE_DEVICE_ID}&lastNMilliSeconds=6000
-	m.Get("/api/device/DeviceHeartBeatDetails/",
+	m.Get("/api/Device/DeviceHeartBeatDetails/",
 		func(r render.Render,
 			req *http.Request,
 			db *mgo.Database) {
@@ -97,7 +97,7 @@ func NewServer(session *DatabaseSession, kafkaSession *KafkaSession, postgresSes
 			r.JSON(200, heartBeatDetails)
 		})
 
-	m.Get("/api/device/DeviceRpmAnalytics",
+	m.Get("/api/Device/DeviceRpmAnalytics",
 		func(r render.Render,
 			req *http.Request,
 			db *mgo.Database) {
@@ -121,7 +121,7 @@ func NewServer(session *DatabaseSession, kafkaSession *KafkaSession, postgresSes
 		})
 
 	// Define the "GET /api/device/list" route.
-	m.Get("/api/device/list", func(r render.Render, postgres *PostgresSession) {
+	m.Get("/api/Device/DeviceList", func(r render.Render, postgres *PostgresSession) {
 		apiResponse := utility.APIResponse{StatusCode: 200, Code: "0000", Message: "OK"}
 
 		devices, err := postgres.FetchAlDevices()

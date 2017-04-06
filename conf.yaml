@@ -4,17 +4,20 @@ Kafka:
     - 
       Host: "172.22.44.141"
       Port: 9092
+
 MongoDb: 
   Replicas: 
     - 
       Host: "172.22.44.141"
       Port: 27017
+
 Postgres: 
   DbName: postgres
   Host: "172.22.44.141"
+  Username: postgres
   Password: secret
   Port: 5432
-  Username: postgres
+
 Redis: 
   Host: "172.22.44.141"
   Port: 6379
