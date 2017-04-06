@@ -11,25 +11,14 @@ import (
 
 // Device is composed of some variables
 type Device struct {
-	UniqueDeviceID string `json:"UniqueDeviceId"`
-	DeviceType     string
+	UniqueDeviceID string `json:"uniqueDeviceId"`
+	DeviceType     int    `json:"deviceType"`
 }
 
 // All fields must exist and valid
 func (device *Device) valid() bool {
 	// TODO: gseng - no checks for the time being
 	return true
-}
-
-// retrieve all device details without any condition
-func fetchAllDevices(db *mgo.Database) []Device {
-	devices := []Device{}
-	err := db.C("Device").Find(nil).All(&devices)
-	if err != nil {
-		panic(err)
-	}
-
-	return devices
 }
 
 func fetchAllHeartBeatDetails(db *mgo.Database, deviceID string, lastNMilliSeconds int) []HeartBeat {

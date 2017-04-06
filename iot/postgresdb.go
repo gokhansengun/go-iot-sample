@@ -35,6 +35,36 @@ func NewPostgresSession(connStr string) *PostgresSession {
 	return &PostgresSession{db, connStr}
 }
 
+// FetchAlDevices retrieves all the devices registered so far in the db
+func (postgresSession *PostgresSession) FetchAlDevices() ([]Device, error) {
+	queryAllDevicesStr := `SELECT "UniqueDeviceId", "DeviceType" FROM "Device"`
+
+	rows, err := postgresSession.DB.Query(queryAllDevicesStr)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	uniqueDeviceID := ""
+	deviceType := -1
+	devices := []Device{}
+	for rows.Next() {
+		err = rows.Scan(&uniqueDeviceID, &deviceType)
+
+		device := Device{UniqueDeviceID: uniqueDeviceID, DeviceType: deviceType}
+
+		devices = append(devices, device)
+
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return devices, nil
+}
+
 // RegisterDevice is the utility function to register a device from service
 func (postgresSession *PostgresSession) RegisterDevice(device Device) error {
 	// first check whether the device is already in the Database
@@ -70,6 +100,8 @@ func deviceAlreadyRegistered(postgres *sql.DB, uniqueDeviceID string) (bool, err
 		return false, err
 	}
 
+	defer rows.Close()
+
 	count := 0
 	for rows.Next() {
 		err = rows.Scan(&count)
@@ -90,17 +122,18 @@ func deviceAlreadyRegistered(postgres *sql.DB, uniqueDeviceID string) (bool, err
 
 func insertDevice(postgres *sql.DB, device Device) error {
 	sqlStatement := `  
-		INSERT INTO "Device" ("UniqueDeviceId", "DeviceType", "CreatedOn", "CreatedBy", "UpdatedOn")  
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO "Device" ("UniqueDeviceId", "DeviceType", "StatusType", "CreatedOn", "CreatedBy", "UpdatedOn", "UpdatedBy")  
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
 		RETURNING "Id"`
 
 	var datetime = time.Now()
 	datetime.Format(time.RFC3339)
 
 	createdBy := "00000000-0000-0000-0000-000000000001"
+	updatedBy := "00000000-0000-0000-0000-000000000001"
 
 	id := 0
-	err := postgres.QueryRow(sqlStatement, device.UniqueDeviceID, device.DeviceType, datetime, createdBy, datetime).Scan(&id)
+	err := postgres.QueryRow(sqlStatement, device.UniqueDeviceID, device.DeviceType, 1, datetime, createdBy, datetime, updatedBy).Scan(&id)
 	if err != nil {
 		return err
 	}

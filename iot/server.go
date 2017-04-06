@@ -77,8 +77,23 @@ func NewServer(session *DatabaseSession, kafkaSession *KafkaSession, postgresSes
 		})
 
 	// Define the "GET /api/device/list" route.
-	m.Get("/api/device/list", func(r render.Render, db *mgo.Database, kafka *KafkaSession) {
-		r.JSON(200, fetchAllDevices(db))
+	m.Get("/api/device/list", func(r render.Render, postgres *PostgresSession) {
+		devices, err := postgres.FetchAlDevices()
+
+		apiResponse := utility.APIResponse{StatusCode: 200, Code: "0000", Message: "OK"}
+
+		if err != nil {
+			// insert failed, 400 Bad Request
+			apiResponse.Code = "0001"
+			apiResponse.StatusCode = 400
+			apiResponse.Message = err.Error()
+
+			r.JSON(apiResponse.StatusCode, apiResponse)
+		}
+
+		apiResponse.Result = devices
+
+		r.JSON(apiResponse.StatusCode, apiResponse)
 	})
 
 	// Define the "POST /api/device/test" route.
@@ -148,7 +163,7 @@ func NewServer(session *DatabaseSession, kafkaSession *KafkaSession, postgresSes
 
 				// insert into Kafka
 
-				heartBeat.HeartBeatOn = time.Now().UTC()
+				heartBeat.HeartBeatOn = time.Now()
 				buff, err := json.Marshal(heartBeat)
 
 				if err != nil {
