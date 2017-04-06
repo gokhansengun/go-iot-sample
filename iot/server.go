@@ -56,6 +56,26 @@ func NewServer(session *DatabaseSession, kafkaSession *KafkaSession, postgresSes
 
 	})
 
+	// /api/Device/DeviceHeartBeatDetailsNormalized/?id=58e665cd31eb78000738fedd&lastNMilliSeconds=30000&normalizeOnMilliSeconds=250&UniqueDeviceId=HT37WW902113
+	m.Get("/api/device/DeviceHeartBeatDetailsNormalized/",
+		func(r render.Render,
+			req *http.Request,
+			db *mgo.Database) {
+
+			lastRecordID := req.URL.Query().Get("id")
+			lastNMilliSeconds, _ := strconv.Atoi(req.URL.Query().Get("lastNMilliSeconds"))
+			normalizeOnMilliSeconds, _ := strconv.Atoi(req.URL.Query().Get("normalizeOnMilliSeconds"))
+			uniqueDeviceID := req.URL.Query().Get("UniqueDeviceId")
+
+			heartBeatDetails := fetchAllHeartBeatDetailsNormalized(db, lastRecordID, lastNMilliSeconds, normalizeOnMilliSeconds, uniqueDeviceID)
+
+			apiResponse := utility.APIResponse{StatusCode: 200, Code: "0000", Message: "OK"}
+
+			apiResponse.Result = heartBeatDetails
+
+			r.JSON(apiResponse.StatusCode, apiResponse)
+		})
+
 	// /api/device/DeviceHeartBeatDetails/?UniqueDeviceId=${UNIQUE_DEVICE_ID}&lastNMilliSeconds=6000
 	m.Get("/api/device/DeviceHeartBeatDetails/",
 		func(r render.Render,
@@ -63,7 +83,9 @@ func NewServer(session *DatabaseSession, kafkaSession *KafkaSession, postgresSes
 			db *mgo.Database,
 			kafka *KafkaSession) {
 
+			lastRecordID := req.URL.Query().Get("id")
 			deviceID := req.URL.Query().Get("UniqueDeviceId")
+
 			lastNMilliSeconds, err := strconv.Atoi(req.URL.Query().Get("lastNMilliSeconds"))
 
 			if err != nil {
@@ -71,7 +93,7 @@ func NewServer(session *DatabaseSession, kafkaSession *KafkaSession, postgresSes
 				return
 			}
 
-			heartBeatDetails := fetchAllHeartBeatDetails(db, deviceID, lastNMilliSeconds)
+			heartBeatDetails := fetchAllHeartBeatDetails(db, lastRecordID, deviceID, lastNMilliSeconds)
 
 			r.JSON(200, heartBeatDetails)
 		})

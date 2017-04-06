@@ -2,12 +2,16 @@ package iot
 
 import (
 	"time"
+
+	"labix.org/v2/mgo/bson"
 )
 
 // HeartBeat is composed of a first name, last name,
 // email, age, and short message. When represented in
 // JSON, ditch TitleCase for snake_case.
 type HeartBeat struct {
+	ID bson.ObjectId `bson:"_id,omitempty"`
+
 	UniqueDeviceID string `bson:"UniqueDeviceId"`
 
 	AccelerometerX float64 `bson:"AccelerometerX"`
@@ -27,6 +31,21 @@ type HeartBeat struct {
 	Longitude float64 `bson:"Longitude"`
 
 	HeartBeatOn time.Time `bson:"HeartBeatOn"`
+}
+
+// HeartBeats is the array of HeartBeat objects
+type HeartBeats []HeartBeat
+
+func (slice HeartBeats) Len() int {
+	return len(slice)
+}
+
+func (slice HeartBeats) Less(i, j int) bool {
+	return slice[i].HeartBeatOn.Before(slice[j].HeartBeatOn)
+}
+
+func (slice HeartBeats) Swap(i, j int) {
+	slice[i], slice[j] = slice[j], slice[i]
 }
 
 // All fields must exist and valid
