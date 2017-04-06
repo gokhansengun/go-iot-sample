@@ -93,3 +93,24 @@ func fetchAllHeartBeatDetailsNormalized(db *mgo.Database, lastRecordID string, l
 
 	return normalizedHeartBeats
 }
+
+func fetchDeviceRpmAnalytics(db *mgo.Database) (RpmAnalyticsHeartBeats, error) {
+	now := time.Now()
+	duration := time.Duration(-1) * time.Minute
+	cutoffDate := now.Add(duration)
+
+	query := bson.M{"HeartBeatOn": bson.M{"$gt": cutoffDate}}
+
+	count, err := db.C("DeviceDetail").Find(query).Count()
+
+	if err != nil {
+		return nil, err
+	}
+
+	rpmHeartBeat := RpmAnalyticsHeartBeat{UniqueDeviceID: "Dummy", NumberOfRequestPerMinutes: count}
+
+	rpmHeartBeats := RpmAnalyticsHeartBeats{}
+	rpmHeartBeats = append(rpmHeartBeats, rpmHeartBeat)
+
+	return rpmHeartBeats, nil
+}

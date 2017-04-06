@@ -80,8 +80,7 @@ func NewServer(session *DatabaseSession, kafkaSession *KafkaSession, postgresSes
 	m.Get("/api/device/DeviceHeartBeatDetails/",
 		func(r render.Render,
 			req *http.Request,
-			db *mgo.Database,
-			kafka *KafkaSession) {
+			db *mgo.Database) {
 
 			lastRecordID := req.URL.Query().Get("id")
 			deviceID := req.URL.Query().Get("UniqueDeviceId")
@@ -98,11 +97,34 @@ func NewServer(session *DatabaseSession, kafkaSession *KafkaSession, postgresSes
 			r.JSON(200, heartBeatDetails)
 		})
 
+	m.Get("/api/device/DeviceRpmAnalytics",
+		func(r render.Render,
+			req *http.Request,
+			db *mgo.Database) {
+
+			apiResponse := utility.APIResponse{StatusCode: 200, Code: "0000", Message: "OK"}
+
+			deviceRpmAnalytics, err := fetchDeviceRpmAnalytics(db)
+
+			if err != nil {
+				apiResponse.Code = "0001"
+				apiResponse.StatusCode = 400
+				apiResponse.Message = err.Error()
+
+				r.JSON(apiResponse.StatusCode, apiResponse)
+				return
+			}
+
+			apiResponse.Result = deviceRpmAnalytics
+
+			r.JSON(200, apiResponse)
+		})
+
 	// Define the "GET /api/device/list" route.
 	m.Get("/api/device/list", func(r render.Render, postgres *PostgresSession) {
-		devices, err := postgres.FetchAlDevices()
-
 		apiResponse := utility.APIResponse{StatusCode: 200, Code: "0000", Message: "OK"}
+
+		devices, err := postgres.FetchAlDevices()
 
 		if err != nil {
 			// insert failed, 400 Bad Request
@@ -111,6 +133,7 @@ func NewServer(session *DatabaseSession, kafkaSession *KafkaSession, postgresSes
 			apiResponse.Message = err.Error()
 
 			r.JSON(apiResponse.StatusCode, apiResponse)
+			return
 		}
 
 		apiResponse.Result = devices
